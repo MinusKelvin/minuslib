@@ -6,6 +6,8 @@ import org.joml.Vector2d;
 import org.joml.Vector2i;
 import org.joml.Vector4i;
 import org.lwjgl.glfw.*;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.DoubleBuffer;
@@ -18,6 +20,7 @@ import static org.lwjgl.glfw.GLFW.*;
  */
 public final class Window {
 	public final long pointer;
+	public final GLCapabilities capabilities;
 	
 	private GLFWWindowCloseCallback windowClose;
 	private GLFWWindowFocusCallback windowFocus;
@@ -37,6 +40,8 @@ public final class Window {
 	
 	public Window(int width, int height, String title, long monitor, @Nullable  Window shared) {
 		pointer = glfwCreateWindow(width, height, title, monitor, shared == null ? 0 : shared.pointer);
+		makeCurrent();
+		capabilities = GL.createCapabilities();
 	}
 	
 	public GLFWWindowCloseCallback setCallback(GLFWWindowCloseCallback callback) {

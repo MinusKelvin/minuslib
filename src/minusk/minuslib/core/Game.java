@@ -1,5 +1,7 @@
 package minusk.minuslib.core;
 
+import java.util.Arrays;
+
 import static org.lwjgl.glfw.GLFW.glfwGetTime;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 
@@ -15,23 +17,29 @@ public class Game {
 	private static int maxSkips = 10;
 	/** number of updates per second */
 	private static double ups = 60;
+	/** used to find the average FPS  */
+	private static double[] frameHistory = new double[60];
+	static {
+		Arrays.fill(frameHistory, 1/60.0);
+	}
 	
 	/**
-	 * Starts the game loop. This is a fixed time step 
+	 * Starts the game loop. This is a fixed time step game loop.
 	 * 
-	 * @param controller The <code>GameController</code> the gameloop should call
+	 * @param controller The <code>GameController</code> the game loop should call
 	 */
 	public static void start(GameController controller) {
 		if (game != null)
-			throw new MinusLibException("Cannot start the gameloop while the gameloop is running");
+			throw new IllegalStateException("Cannot start the gameloop while the gameloop is running");
 		
 		game = controller;
 		
 		looping = true;
 		double currentTime = glfwGetTime();
+		double frametime = 1 / ups;
 		do {
+			double t = glfwGetTime();
 			// Update until we've caught up or have reached the maximum skip count
-			double frametime = 1 / ups;
 			for (int i = 0; i < maxSkips && currentTime < glfwGetTime(); i++) {
 				currentTime += frametime;
 				game.update();
@@ -45,6 +53,10 @@ public class Game {
 			game.render((float) ((glfwGetTime()-currentTime+frametime) / frametime));
 			
 			glfwPollEvents();
+			
+			// Shift all the elements of this array down one
+			System.arraycopy(frameHistory, 1, frameHistory, 0, frameHistory.length - 1);
+			frameHistory[frameHistory.length-1] = glfwGetTime()-t;
 		} while (looping);
 		
 		game.cleanUp();
@@ -71,5 +83,15 @@ public class Game {
 	 */
 	public static void setMaxSkips(int maxSkips) {
 		Game.maxSkips = maxSkips;
+	}
+	
+	/**
+	 * @return The game's FPS calculated through an average of frame times over the past 10 frames.
+	 */
+	public static int getFPS() {
+		double sum = 0;
+		for (double d : frameHistory)
+			sum += d;
+		return (int) Math.round(frameHistory.length/sum);
 	}
 }
