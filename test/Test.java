@@ -12,6 +12,7 @@ import static org.lwjgl.opengl.GL30.*;
  */
 public class Test implements GameController {
 	private final Window window;
+	private float green;
 	
 	private Test() {
 		glfwInit();
@@ -30,12 +31,13 @@ public class Test implements GameController {
 		if (window.closeRequested())
 			Game.stop();
 		window.setTitle("Test - FPS: "+Game.getFPS());
+		green += 0.01f;
 	}
 	
 	@Override
 	public void render(float alpha) {
 		try (MemoryStack stack = MemoryStack.stackPush()) {
-			glClearBufferfv(GL_COLOR, 0, stack.floats(0,0,0,0));
+			glClearBufferfv(GL_COLOR, 0, stack.floats(0,(float)Math.pow(green%1,2.2),0,0));
 		}
 		window.swapBuffers();
 	}
