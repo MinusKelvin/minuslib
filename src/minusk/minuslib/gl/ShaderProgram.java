@@ -36,7 +36,7 @@ public class ShaderProgram {
 		
 		glLinkProgram(id);
 		
-		if (glGetProgrami(id, GL_LINK_STATUS) != GL_FALSE)
+		if (glGetProgrami(id, GL_LINK_STATUS) == GL_FALSE)
 			throw new RuntimeException(glGetProgramInfoLog(id));
 	}
 	
