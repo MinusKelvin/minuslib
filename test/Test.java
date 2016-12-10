@@ -1,14 +1,18 @@
 import minusk.minuslib.core.Game;
 import minusk.minuslib.core.GameController;
 import minusk.minuslib.core.Window;
-import minusk.minuslib.immediate.ImmediateColor;
+import minusk.minuslib.gl.Texture2D;
+import minusk.minuslib.immediate.ImmediateTexture;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.system.MemoryStack;
 
+import java.io.IOException;
+
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.GL_COLOR;
-import static org.lwjgl.opengl.GL11.glViewport;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
+import static org.lwjgl.opengl.GL12.GL_TEXTURE_MAX_LEVEL;
 import static org.lwjgl.opengl.GL30.*;
 
 /**
@@ -16,7 +20,8 @@ import static org.lwjgl.opengl.GL30.*;
  */
 public class Test implements GameController {
 	private final Window window;
-	private ImmediateColor immediate;
+	private ImmediateTexture immediate;
+	private Texture2D texture;
 	
 	private Test() {
 		glfwInit();
@@ -30,8 +35,19 @@ public class Test implements GameController {
 		
 		glBindVertexArray(glGenVertexArrays());
 		
-		immediate = new ImmediateColor();
+		immediate = new ImmediateTexture();
 		immediate.transformation = new Matrix4f();
+		try {
+			texture = new Texture2D().load(0, GL_RGBA8, getClass().getResourceAsStream("/test.png"));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		texture.parameteri(GL_TEXTURE_MAX_LEVEL, 0);
+		texture.parameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		texture.parameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		immediate.bindTexture(texture);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 	
 	@Override
@@ -42,22 +58,23 @@ public class Test implements GameController {
 	}
 	
 	@Override
-	public void render(float alpha) {
+	public void render(double alpha) {
 		try (MemoryStack stack = MemoryStack.stackPush()) {
-			glClearBufferfv(GL_COLOR, 0, stack.floats(0,0,0,0));
+			glClearBufferfv(GL_COLOR, 0, stack.floats(1,1,1,1));
 		}
 		
 		immediate.transformation.identity();
 		immediate.begin();
-		immediate.color(0xff0000);
+		immediate.color(0xffffffff);
+		immediate.texture(0, 0);
 		immediate.vertex(0, 0, 0);
-		immediate.color(0xff00);
+		immediate.texture(0, 1);
 		immediate.vertex(0, 1, 0);
-		immediate.color(0xff);
+		immediate.texture(1, 0);
 		immediate.vertex(1, 0, 0);
 		immediate.draw();
 		
-		immediate.transformation.translate(-0.5f,-0.5f,0).rotate(1, 0, 0, 1);
+		immediate.transformation.translate(-0.25f,-0.5f,0).rotate(0.5f, 0, 0, 1);
 		immediate.drawLast();
 		
 		window.swapBuffers();

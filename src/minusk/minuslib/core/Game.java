@@ -13,8 +13,10 @@ public class Game {
 	
 	/** true if game loop is running */
 	private static boolean looping;
+	/** true if the game is puased (no ticking, same alpha parameter to render()) */
+	private static boolean paused;
 	/** maximum number of updates per frame before slowing game logic down */
-	private static int maxSkips = 10;
+	private static int maxTicks = 10;
 	/** number of updates per second */
 	private static double ups = 60;
 	/** used to find the average FPS  */
@@ -35,22 +37,28 @@ public class Game {
 		game = controller;
 		
 		looping = true;
-		double currentTime = glfwGetTime();
-		double frametime = 1 / ups;
+		double timeOfLastFrame = glfwGetTime();
+		double timeSinceTick = 1 / ups;
 		do {
 			double t = glfwGetTime();
-			// Update until we've caught up or have reached the maximum skip count
-			for (int i = 0; i < maxSkips && currentTime < glfwGetTime(); i++) {
-				currentTime += frametime;
-				game.update();
-				frametime = 1 / ups;
-				glfwPollEvents();
-			}
-			// If we're lagging too much (haven't caught up within the maximum skip count) slow game logic down
-			if (currentTime < glfwGetTime())
-				currentTime = glfwGetTime();
+			if (!paused)
+				timeSinceTick += (t - timeOfLastFrame);
+			timeOfLastFrame = t;
+			double frametime = 1 / ups;
 			
-			game.render((float) ((glfwGetTime()-currentTime+frametime) / frametime));
+			// Update until we've caught up or have reached the maximum tick count
+			int ticks = 0;
+			while (timeSinceTick > frametime) {
+				if (ticks++ > maxTicks) {
+					// Slows the game logic down if we're lagging too much
+					timeSinceTick = frametime;
+					break;
+				}
+				timeSinceTick -= frametime;
+				game.update();
+			}
+			
+			game.render(ups * timeSinceTick);
 			
 			glfwPollEvents();
 			
@@ -72,6 +80,23 @@ public class Game {
 	}
 	
 	/**
+	 * Pauses the game loop. <code>GameController.update()</code> will not be called,
+	 * and <code>GameController.render(double)</code> will be called with the same alpha value.
+	 */
+	public static void pause() {
+		paused = true;
+	}
+	
+	/** Unpauses the game loop. See Game.pause() */
+	public static void unpause() {
+		paused = false;
+	}
+	
+	public static boolean isPaused() {
+		return paused;
+	}
+	
+	/**
 	 * @param ups The number of times per second the game's update method should be called
 	 */
 	public static void setTargetUPS(double ups) {
@@ -79,10 +104,10 @@ public class Game {
 	}
 	
 	/**
-	 * @param maxSkips The number of times the game's update method can be called in a single frame before slowing game updates
+	 * @param maxTicks The number of times the game's update method can be called in a single frame before slowing game updates
 	 */
-	public static void setMaxSkips(int maxSkips) {
-		Game.maxSkips = maxSkips;
+	public static void setMaxTicksPerFrame(int maxTicks) {
+		Game.maxTicks = maxTicks;
 	}
 	
 	/**

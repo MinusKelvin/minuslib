@@ -99,6 +99,15 @@ public class GBuffer {
 		return depthTarget;
 	}
 	
+	public void dispose() {
+		int[] textures = new int[tex.length+1];
+		for (int i = 0; i < tex.length; i++)
+			textures[i] = tex[i].id;
+		textures[tex.length] = depthTarget;
+		glDeleteTextures(textures);
+		glDeleteFramebuffers(framebufferID);
+	}
+	
 	private static class TextureDescriber {
 		private int samples = 0;
 		private int format;

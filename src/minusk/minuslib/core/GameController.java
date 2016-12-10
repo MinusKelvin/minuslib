@@ -17,7 +17,7 @@ public interface GameController {
 	 * 
 	 * @param alpha A value between 0 and 1, representing the fraction from the current frame to the next frame.
 	 */
-	void render(float alpha);
+	void render(double alpha);
 	
 	/**
 	 * Clean up phase.
