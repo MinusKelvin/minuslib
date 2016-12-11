@@ -120,6 +120,8 @@ public abstract class ImmediateBase {
 			realloc = true;
 			maxVerts += 1024;
 		}
+		
+		data.position(0);
 		if (realloc)
 			data = je_realloc(data, maxVerts*bytesPerVertex);
 		
